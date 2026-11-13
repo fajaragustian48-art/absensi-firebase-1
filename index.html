@@ -24,9 +24,10 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
 .page-transition{animation:fadeIn .25s cubic-bezier(.16,1,.3,1);}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.modal-overlay{z-index:9000;backdrop-filter:blur(8px);}
+/* ====== Z-INDEX LAYERED (fixed order) ====== */
+.modal-overlay{z-index:9500;backdrop-filter:blur(8px);}
 .process-overlay{z-index:9600;backdrop-filter:blur(10px);}
-.drawer-overlay{z-index:9500;backdrop-filter:blur(4px);}
+.drawer-overlay{z-index:9400;backdrop-filter:blur(4px);}
 .toast-container{z-index:9999;}
 .nav-active{background-color:rgba(255,255,255,.15);color:#fff;border-left:4px solid #f59e0b;}
 .card-watermark{position:absolute;right:-10px;bottom:-15px;font-size:5.5rem;opacity:.15;pointer-events:none;user-select:none;}
@@ -42,6 +43,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
 .calendar-day-cell{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:.65rem;font-size:.7rem;font-weight:600;cursor:pointer;transition:all .15s;}
 .calendar-day-cell:hover{background-color:#f1f5f9;}
 .calendar-day-active{background-color:#2563eb!important;color:#fff!important;font-weight:800;}
+.calendar-day-hasdata{background-color:rgba(37,99,235,.14)!important;color:#1e40af!important;font-weight:800;}
 .calendar-marker-complete::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:#10b981;}
 .calendar-marker-partial::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:#f59e0b;}
 .calendar-marker-double::after{content:'';position:absolute;bottom:3px;width:4px;height:4px;border-radius:50%;background:#ef4444;}
@@ -242,6 +244,22 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
   </div>
 </div>
 
+<!-- QR PRINT MODAL (BARU: pilih dengan/tanpa foto) -->
+<div id="modal-qr-print" class="modal-overlay fixed inset-0 bg-slate-900/70 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative space-y-4">
+    <button onclick="closeQrPrintModal()" class="absolute top-4 right-4 text-slate-400 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <div class="text-center">
+      <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3"><i class="fa-solid fa-qrcode"></i></div>
+      <h4 class="font-extrabold text-slate-900 text-lg">Cetak Kartu Siswa</h4>
+      <p class="text-xs text-slate-500">Pilih format kartu</p>
+    </div>
+    <div class="space-y-2 pt-2">
+      <button onclick="printCurrentStudentCard(true)" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-image"></i> Dengan Foto</button>
+      <button onclick="printCurrentStudentCard(false)" class="w-full py-3 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-user"></i> Tanpa Foto</button>
+    </div>
+  </div>
+</div>
+
 <div id="landing-view" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-brand-navy to-slate-950 text-white overflow-y-auto">
   <div class="max-w-md w-full bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl space-y-6 text-center my-auto">
     <div class="w-20 h-20 rounded-3xl flex items-center justify-center text-3xl mx-auto shadow-xl overflow-hidden" id="landing-app-logo" style="background:#f59e0b;color:#0f172a"><img src="https://lh3.googleusercontent.com/d/1CyWyy18f1VODqyAt-dFy_EifkyiTPMVl" alt="Logo" class="w-full h-full object-cover" onerror="this.style.display='none'"></div>
@@ -282,11 +300,40 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
             </div>
           </div>
           <div class="p-6 space-y-4">
+            <!-- 4 kartu absensi dinamis (REDESIGN: rata kiri + persentase | poin) -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 text-center relative overflow-hidden"><i class="fa-solid fa-circle-check absolute right-1 top-1/2 -translate-y-1/2 text-5xl opacity-10 text-emerald-600"></i><div class="relative"><div class="text-2xl font-black text-emerald-700" id="res-count-hadir">0</div><div class="text-[10px] font-bold text-emerald-600 uppercase">Hadir</div></div></div>
-              <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 text-center relative overflow-hidden"><i class="fa-solid fa-notes-medical absolute right-1 top-1/2 -translate-y-1/2 text-5xl opacity-10 text-amber-600"></i><div class="relative"><div class="text-2xl font-black text-amber-700" id="res-count-sakit">0</div><div class="text-[10px] font-bold text-amber-600 uppercase">Sakit</div></div></div>
-              <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 text-center relative overflow-hidden"><i class="fa-solid fa-envelope-open absolute right-1 top-1/2 -translate-y-1/2 text-5xl opacity-10 text-sky-600"></i><div class="relative"><div class="text-2xl font-black text-sky-700" id="res-count-izin">0</div><div class="text-[10px] font-bold text-sky-600 uppercase">Izin</div></div></div>
-              <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 text-center relative overflow-hidden"><i class="fa-solid fa-circle-xmark absolute right-1 top-1/2 -translate-y-1/2 text-5xl opacity-10 text-rose-600"></i><div class="relative"><div class="text-2xl font-black text-rose-700" id="res-count-alpha">0</div><div class="text-[10px] font-bold text-rose-600 uppercase">Alpha</div></div></div>
+              <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl p-4 relative overflow-hidden">
+                <i class="fa-solid fa-circle-check absolute right-0 top-1/2 -translate-y-1/2 text-6xl opacity-10"></i>
+                <div class="relative text-left">
+                  <div class="text-[10px] font-extrabold uppercase tracking-wider opacity-90">Hadir</div>
+                  <div class="text-3xl font-black mt-0.5" id="res-count-hadir">0</div>
+                  <div class="text-[10px] opacity-90 mt-0.5 font-semibold" id="res-detail-hadir">0% • 0 poin</div>
+                </div>
+              </div>
+              <div class="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-4 relative overflow-hidden">
+                <i class="fa-solid fa-notes-medical absolute right-0 top-1/2 -translate-y-1/2 text-6xl opacity-10"></i>
+                <div class="relative text-left">
+                  <div class="text-[10px] font-extrabold uppercase tracking-wider opacity-90">Sakit</div>
+                  <div class="text-3xl font-black mt-0.5" id="res-count-sakit">0</div>
+                  <div class="text-[10px] opacity-90 mt-0.5 font-semibold" id="res-detail-sakit">0% • 0 poin</div>
+                </div>
+              </div>
+              <div class="bg-gradient-to-br from-sky-500 to-blue-600 text-white rounded-2xl p-4 relative overflow-hidden">
+                <i class="fa-solid fa-envelope-open absolute right-0 top-1/2 -translate-y-1/2 text-6xl opacity-10"></i>
+                <div class="relative text-left">
+                  <div class="text-[10px] font-extrabold uppercase tracking-wider opacity-90">Izin</div>
+                  <div class="text-3xl font-black mt-0.5" id="res-count-izin">0</div>
+                  <div class="text-[10px] opacity-90 mt-0.5 font-semibold" id="res-detail-izin">0% • 0 poin</div>
+                </div>
+              </div>
+              <div class="bg-gradient-to-br from-rose-600 to-red-700 text-white rounded-2xl p-4 relative overflow-hidden">
+                <i class="fa-solid fa-circle-xmark absolute right-0 top-1/2 -translate-y-1/2 text-6xl opacity-10"></i>
+                <div class="relative text-left">
+                  <div class="text-[10px] font-extrabold uppercase tracking-wider opacity-90">Alpha</div>
+                  <div class="text-3xl font-black mt-0.5" id="res-count-alpha">0</div>
+                  <div class="text-[10px] opacity-90 mt-0.5 font-semibold" id="res-detail-alpha">0% • 0 poin</div>
+                </div>
+              </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div class="bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl p-4 relative overflow-hidden">
@@ -298,9 +345,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
                 <div class="relative"><div class="text-[10px] font-bold uppercase opacity-80">Kehadiran</div><div class="text-3xl font-black mt-1" id="res-persentase">0%</div><div class="text-[9px] opacity-70 mt-0.5" id="res-pct-detail">0 hari</div></div>
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-              <button onclick="downloadStudentReportXLSX()" class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-file-excel"></i> Unduh XLSX</button>
-              <button onclick="openCekInfo()" class="py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-2 border-blue-200 font-bold rounded-xl text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-circle-info"></i> Cara Hitung</button>
+            <!-- Tombol aksi: 3 kolom (XLSX | Cara Hitung | QR Print) -->
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="downloadStudentReportXLSX()" class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5"><i class="fa-solid fa-file-excel"></i> <span class="hidden sm:inline">Unduh</span> XLSX</button>
+              <button onclick="openCekInfo()" class="py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border-2 border-blue-200 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-1.5"><i class="fa-solid fa-circle-info"></i> Cara Hitung</button>
+              <button onclick="openQrPrintModal()" class="py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-1.5" title="Cetak Kartu Siswa (QR)"><i class="fa-solid fa-qrcode text-lg"></i></button>
             </div>
           </div>
         </div>
@@ -576,12 +625,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
               <div><label class="setting-label">Ikon Siswa</label><div class="flex gap-1.5"><input type="text" id="set-student-icon" required oninput="updateIconPreview('set-student-icon','preview-student-icon')" class="setting-input font-mono"><button type="button" onclick="openIconPicker('set-student-icon','student')" class="icon-picker-btn"><i class="fa-solid fa-palette"></i></button><div class="icon-preview-box" id="preview-student-icon"><i class="fa-solid fa-graduation-cap"></i></div></div></div>
             </div>
           </div>
-          <div class="setting-card"><div class="setting-card-title"><i class="fa-solid fa-fill-drip text-pink-600"></i> Warna Background Ikon</div>
-            <p class="text-[11px] text-slate-500 mb-3">Atur warna background untuk setiap ikon. Centang "Transparan" untuk tanpa background.</p>
+          <div class="setting-card"><div class="setting-card-title"><i class="fa-solid fa-fill-drip text-pink-600"></i> Warna Background & Ikon</div>
+            <p class="text-[11px] text-slate-500 mb-3">Atur warna background & warna ikon. Centang "Transparan" untuk background tanpa warna.</p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div><label class="setting-label">App</label><div class="flex items-center gap-1.5"><input type="color" id="set-iconbg-app" class="flex-1 h-9 p-1 rounded-lg border border-slate-300 cursor-pointer"><label class="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer whitespace-nowrap"><input type="checkbox" id="set-iconbg-app-transparent" onchange="toggleIconBgTransparent('app')" class="w-3.5 h-3.5">Transparan</label></div></div>
-              <div><label class="setting-label">User</label><div class="flex items-center gap-1.5"><input type="color" id="set-iconbg-user" class="flex-1 h-9 p-1 rounded-lg border border-slate-300 cursor-pointer"><label class="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer whitespace-nowrap"><input type="checkbox" id="set-iconbg-user-transparent" onchange="toggleIconBgTransparent('user')" class="w-3.5 h-3.5">Transparan</label></div></div>
-              <div><label class="setting-label">Siswa</label><div class="flex items-center gap-1.5"><input type="color" id="set-iconbg-student" class="flex-1 h-9 p-1 rounded-lg border border-slate-300 cursor-pointer"><label class="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer whitespace-nowrap"><input type="checkbox" id="set-iconbg-student-transparent" onchange="toggleIconBgTransparent('student')" class="w-3.5 h-3.5">Transparan</label></div></div>
+              <div><label class="setting-label">App</label><div class="space-y-1.5"><div class="flex items-center gap-1.5"><input type="color" id="set-iconbg-app" class="flex-1 h-9 p-1 rounded-lg border border-slate-300 cursor-pointer"><label class="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer whitespace-nowrap"><input type="checkbox" id="set-iconbg-app-transparent" onchange="toggleIconBgTransparent('app')" class="w-3.5 h-3.5">Transparan</label></div><div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-500">Warna Ikon:</span><input type="color" id="set-iconcolor-app" class="flex-1 h-7 p-0.5 rounded border border-slate-300 cursor-pointer"></div></div></div>
+              <div><label class="setting-label">User</label><div class="space-y-1.5"><div class="flex items-center gap-1.5"><input type="color" id="set-iconbg-user" class="flex-1 h-9 p-1 rounded-lg border border-slate-300 cursor-pointer"><label class="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer whitespace-nowrap"><input type="checkbox" id="set-iconbg-user-transparent" onchange="toggleIconBgTransparent('user')" class="w-3.5 h-3.5">Transparan</label></div><div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-500">Warna Ikon:</span><input type="color" id="set-iconcolor-user" class="flex-1 h-7 p-0.5 rounded border border-slate-300 cursor-pointer"></div></div></div>
+              <div><label class="setting-label">Siswa</label><div class="space-y-1.5"><div class="flex items-center gap-1.5"><input type="color" id="set-iconbg-student" class="flex-1 h-9 p-1 rounded-lg border border-slate-300 cursor-pointer"><label class="flex items-center gap-1 text-[10px] font-bold text-slate-600 cursor-pointer whitespace-nowrap"><input type="checkbox" id="set-iconbg-student-transparent" onchange="toggleIconBgTransparent('student')" class="w-3.5 h-3.5">Transparan</label></div><div class="flex items-center gap-1.5"><span class="text-[10px] font-bold text-slate-500">Warna Ikon:</span><input type="color" id="set-iconcolor-student" class="flex-1 h-7 p-0.5 rounded border border-slate-300 cursor-pointer"></div></div></div>
             </div>
           </div>
         </div>
@@ -630,9 +679,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
           </div>
         </div>
 
-        <!-- ===== SISTEM (LAYOUT BARU) ===== -->
+        <!-- ===== SISTEM ===== -->
         <div id="set-section-sys" class="hidden space-y-4">
-          <!-- Row 1: Backup 60% | Zona Berbahaya 40% -->
           <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
             <div class="lg:col-span-3 setting-card">
               <div class="setting-card-title"><i class="fa-solid fa-cloud-arrow-down text-blue-600"></i> Backup & Restore</div>
@@ -649,7 +697,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
             </div>
           </div>
 
-          <!-- Row 2: Rules | Config side by side -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="setting-card">
               <div class="setting-card-title"><i class="fa-solid fa-shield-halved text-blue-600"></i> Firestore Security Rules</div>
@@ -658,15 +705,33 @@ body{font-family:'Plus Jakarta Sans',sans-serif;}
                 <pre id="firebase-rules-code" class="bg-slate-900 text-emerald-400 p-3 rounded-xl text-[10px] font-mono overflow-x-auto whitespace-pre">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAdmin() { return request.auth != null; }
-    match /students/{nis} { allow read: if true; allow write: if isAdmin(); }
-    match /attendance/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /settings/{docId} { allow read, write: if isAdmin(); }
-    match /piket/{docId} { allow read, write: if isAdmin(); }
+    // Cukup authenticated — siapa yang login di Firebase Console yang Anda pegang saja
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    match /students/{nis} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /attendance/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /piket/{docId} {
+      allow read, write: if isAdmin();
+    }
   }
 }</pre>
                 <button type="button" onclick="copyTextBySelector('#firebase-rules-code','Security Rules')" class="absolute top-2 right-2 p-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition" title="Salin"><i class="fa-solid fa-copy text-[10px]"></i></button>
               </div>
+              <p class="text-[10px] text-amber-700 mt-2 p-2 bg-amber-50 rounded-lg border border-amber-200"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Catatan: rules ini membuat <strong>Portal Cek Absensi publik</strong> memakai <code class="bg-white px-1 rounded">defaultConfig</code> (branding default). Jika ingin branding tampil di portal, buat dokumen <code class="bg-white px-1 rounded">settings/public</code> dengan <code class="bg-white px-1 rounded">allow read: if true;</code>.</p>
             </div>
             <div class="setting-card">
               <div class="setting-card-title"><i class="fa-solid fa-code text-purple-600"></i> Firebase Config</div>
@@ -678,12 +743,11 @@ service cloud.firestore {
             </div>
           </div>
 
-          <!-- Row 3: Informasi Sistem dengan Ringkasan Data -->
           <div class="setting-card">
             <div class="setting-card-title"><i class="fa-solid fa-info-circle text-slate-700"></i> Informasi Sistem</div>
             <div class="space-y-2 text-xs">
               <div class="flex justify-between items-center py-2 border-b border-slate-100"><span class="text-slate-500">Firebase Project</span><span class="font-mono font-bold text-slate-800 text-[11px]">absensi-firebase-1</span></div>
-              <div class="flex justify-between items-center py-2 border-b border-slate-100"><span class="text-slate-500">Versi</span><span class="font-mono font-bold text-slate-800 text-[11px]">v2.4 — Pro</span></div>
+              <div class="flex justify-between items-center py-2 border-b border-slate-100"><span class="text-slate-500">Versi</span><span class="font-mono font-bold text-slate-800 text-[11px]">v2.5 — Pro</span></div>
               <div class="flex justify-between items-center py-2 border-b border-slate-100"><span class="text-slate-500">Koneksi</span><span id="sys-conn-status" class="font-bold text-emerald-600 text-[11px]"><i class="fa-solid fa-circle text-[8px]"></i> Terhubung</span></div>
               <div class="pt-2 mt-1 border-t-2 border-slate-200">
                 <div class="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1"><i class="fa-solid fa-database text-blue-600"></i> Ringkasan Data</div>
@@ -698,6 +762,32 @@ service cloud.firestore {
     </div>
   </section>
 </main>
+
+<!-- Modal Icon Picker (DIPERBARUI: dengan color picker) -->
+<div id="modal-icon-picker" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl relative space-y-4 max-h-[92vh] overflow-y-auto">
+    <button onclick="closeIconPicker()" class="absolute top-4 right-4 text-slate-400 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+    <div><h4 class="font-extrabold text-slate-900 text-base">Pilih Ikon</h4><p class="text-xs text-slate-500">Klik ikon untuk menerapkan</p></div>
+    <div class="preset-icon-grid" id="preset-icon-list"></div>
+    <div class="pt-3 border-t border-slate-200 space-y-3">
+      <div><label class="block text-xs font-bold text-slate-700 mb-1">Atau isi manual (FA class atau URL):</label><input type="text" id="icon-picker-input" oninput="updateIconPickerPreview()" class="setting-input font-mono"></div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+          <span>Warna Ikon</span>
+          <label class="flex items-center gap-1 text-[10px] font-bold text-slate-500 cursor-pointer">
+            <input type="checkbox" id="icon-picker-color-auto" onchange="toggleIconColorAuto()" class="w-3.5 h-3.5">Otomatis (kontras)
+          </label>
+        </label>
+        <div class="flex items-center gap-2">
+          <input type="color" id="icon-picker-color" oninput="updateIconPickerPreview()" class="flex-1 h-9 p-1 rounded-lg border border-slate-300 cursor-pointer">
+          <div class="icon-preview-box" id="preview-color-icon"><i class="fa-solid fa-palette"></i></div>
+        </div>
+        <p class="text-[10px] text-slate-500 mt-1"><i class="fa-solid fa-info-circle mr-0.5"></i> Warna hanya berlaku untuk ikon FontAwesome (bukan URL gambar).</p>
+      </div>
+    </div>
+    <button onclick="applyIconPicker()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs">Terapkan</button>
+  </div>
+</div>
 
 <div id="modal-calendar-picker" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4">
   <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative space-y-4">
@@ -751,16 +841,6 @@ service cloud.firestore {
     <button onclick="closeCekInfo()" class="absolute top-4 right-4 text-slate-400 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
     <div class="flex items-center gap-3"><div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center text-xl"><i class="fa-solid fa-calculator"></i></div><div><h4 class="font-extrabold text-slate-900 text-base">Cara Perhitungan Poin</h4><p class="text-xs text-slate-500" id="cek-info-subtitle">—</p></div></div>
     <div id="cek-info-content"></div>
-  </div>
-</div>
-
-<div id="modal-icon-picker" class="modal-overlay fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4">
-  <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl relative space-y-4">
-    <button onclick="closeIconPicker()" class="absolute top-4 right-4 text-slate-400 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
-    <div><h4 class="font-extrabold text-slate-900 text-base">Pilih Ikon</h4><p class="text-xs text-slate-500">Klik ikon untuk menerapkan</p></div>
-    <div class="preset-icon-grid" id="preset-icon-list"></div>
-    <div class="pt-3 border-t border-slate-200"><label class="block text-xs font-bold text-slate-700 mb-1">Atau isi manual (FA class atau URL):</label><input type="text" id="icon-picker-input" class="setting-input font-mono"></div>
-    <button onclick="applyIconPicker()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs">Terapkan</button>
   </div>
 </div>
 
@@ -916,6 +996,9 @@ let qrScannerInstance = null;
 let lastQrScan = { nis: '', time: 0 };
 let qrSessionScanned = new Set();
 
+// Icon picker state
+let iconPickerAutoColor = true;
+
 const PRESET_ICONS = {
   app: ['fa-graduation-cap','fa-school','fa-book-open','fa-chalkboard-user','fa-landmark','fa-building-columns','fa-university','fa-award','fa-trophy','fa-medal','fa-crown','fa-star','fa-shield-halved','fa-compass','fa-lightbulb','fa-rocket','fa-cloud','fa-cubes','fa-bookmark','fa-heart'],
   user: ['fa-user-gear','fa-user-tie','fa-user-shield','fa-user-cog','fa-user-astronaut','fa-user-circle','fa-id-badge','fa-crown','fa-user','fa-user-graduate','fa-user-nurse','fa-user-pen','fa-user-tag','fa-user-check','fa-fingerprint','fa-key','fa-lock','fa-shield','fa-user-secret','fa-address-card'],
@@ -930,6 +1013,7 @@ const defaultConfig = {
   userIcon:"fa-user-gear",
   studentIcon:"fa-graduation-cap",
   iconBgApp:"#f59e0b", iconBgUser:"#f59e0b", iconBgStudent:"#2563eb",
+  iconColorApp:"#0f172a", iconColorUser:"#0f172a", iconColorStudent:"#ffffff",
   kopLine1:"PEMERINTAH KABUPATEN SUKABUMI",
   kopLine2:"DINAS PENDIDIKAN",
   kopLine3:"SMP NEGERI 4 CIBADAK",
@@ -1058,44 +1142,31 @@ function renderIconHTML(value, defaultIcon, sizeClass=''){
   return `<i class="fa-solid ${value} ${sizeClass}"></i>`;
 }
 function togglePasswordVisibility(id, iconId){ const i = document.getElementById(id), ic = document.getElementById(iconId); if (!i || !ic) return; if (i.type === 'password'){ i.type = 'text'; ic.classList.replace('fa-eye','fa-eye-slash'); } else { i.type = 'password'; ic.classList.replace('fa-eye-slash','fa-eye'); } }
-window.handleAvatarError = function(img, icon, classes){ const div = document.createElement('div'); div.className = classes + ' flex items-center justify-center shadow'; const bg = systemConfig.iconBgStudent || '#2563eb'; const isNone = bg === 'none' || bg === 'transparent'; div.style.background = isNone ? 'transparent' : bg; div.style.color = isNone ? '#1e293b' : getContrastColor(bg); div.innerHTML = `<i class="fa-solid ${icon||'fa-graduation-cap'}"></i>`; img.replaceWith(div); };
+window.handleAvatarError = function(img, icon, classes){ const div = document.createElement('div'); div.className = classes + ' flex items-center justify-center shadow'; const bg = systemConfig.iconBgStudent || '#2563eb'; const isNone = bg === 'none' || bg === 'transparent'; div.style.background = isNone ? 'transparent' : bg; const manualColor = systemConfig.iconColorStudent; div.style.color = manualColor || (isNone ? '#1e293b' : getContrastColor(bg)); div.innerHTML = `<i class="fa-solid ${icon||'fa-graduation-cap'}"></i>`; img.replaceWith(div); };
 
 function avatarHTML(s, classes){
   if (s && s.photoUrl) return `<img src="${s.photoUrl}" class="${classes} object-cover" onerror="handleAvatarError(this,'fa-graduation-cap','${classes}')">`;
   const bg = systemConfig.iconBgStudent || '#2563eb';
   const isNone = bg === 'none' || bg === 'transparent';
-  const style = isNone ? 'background:transparent;color:#1e293b;' : `background:${bg};color:${getContrastColor(bg)};`;
+  const manualColor = systemConfig.iconColorStudent;
+  const textColor = manualColor || (isNone ? '#1e293b' : getContrastColor(bg));
+  const style = isNone ? `background:transparent;color:${textColor};` : `background:${bg};color:${textColor};`;
   return `<div class="${classes} font-black flex items-center justify-center shadow overflow-hidden" style="${style}">${renderIconHTML(systemConfig.studentIcon||'fa-graduation-cap','fa-graduation-cap')}</div>`;
 }
 
-// ====== QR CODE GENERATOR (qrcode-generator, sync, reliable) ======
+// ====== QR CODE GENERATOR ======
 function generateQRDataUrl(text, cellSize = 4, margin = 2) {
   try {
-    if (typeof qrcode !== 'function') {
-      console.warn('qrcode-generator library not loaded');
-      return null;
-    }
+    if (typeof qrcode !== 'function') { console.warn('qrcode-generator not loaded'); return null; }
     const qr = qrcode(0, 'M');
-    qr.addData(String(text));
-    qr.make();
+    qr.addData(String(text)); qr.make();
     return qr.createDataURL(cellSize, margin);
-  } catch(e) {
-    console.warn('QR generation failed:', e);
-    return null;
-  }
+  } catch(e) { console.warn('QR generation failed:', e); return null; }
 }
 
-// ====== CLIPBOARD HELPER ======
 async function copyToClipboard(text) {
-  try {
-    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
-  } catch(e) { /* fallback */ }
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.setAttribute('readonly',''); ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0'; ta.style.opacity = '0'; ta.style.pointerEvents = 'none';
-    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
-    const ok = document.execCommand('copy'); document.body.removeChild(ta); return ok;
-  } catch(e2) { return false; }
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; } } catch(e) {}
+  try { const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly',''); ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0'; ta.style.opacity = '0'; ta.style.pointerEvents = 'none'; document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length); const ok = document.execCommand('copy'); document.body.removeChild(ta); return ok; } catch(e2) { return false; }
 }
 async function copyTextBySelector(selector, label) {
   const el = document.querySelector(selector);
@@ -1237,7 +1308,7 @@ function showToast(msg, type='success'){
 function showLoading(title='Memproses...', desc='Mohon tunggu'){ document.getElementById('loading-overlay').classList.remove('hidden'); document.getElementById('loading-overlay').classList.add('flex'); document.getElementById('loading-title').innerText = title; document.getElementById('loading-desc').innerText = desc; }
 function hideLoading(){ document.getElementById('loading-overlay').classList.add('hidden'); document.getElementById('loading-overlay').classList.remove('flex'); }
 
-const CACHE_KEY = 'edudigi_settings_cache_v6';
+const CACHE_KEY = 'edudigi_settings_cache_v7';
 function loadCachedSettings(){ try { const c = localStorage.getItem(CACHE_KEY); if (c){ systemConfig = { ...defaultConfig, ...JSON.parse(c) }; return true; } } catch(e){} return false; }
 function saveCachedSettings(){ try { localStorage.setItem(CACHE_KEY, JSON.stringify(systemConfig)); } catch(e){} }
 
@@ -1294,7 +1365,7 @@ async function startPublicListeners(){
   const { collection, onSnapshot, doc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
   unsubSettings = onSnapshot(doc(fb.db, "settings", "main"), snap => {
     if (snap.exists()){ systemConfig = { ...defaultConfig, ...snap.data() }; saveCachedSettings(); try { applySettingsUI(); loadSettingsToUI(); } catch(e){ console.warn(e); } }
-  }, err => { console.warn('Settings listener (public):', err.code); });
+  }, err => { console.warn('Settings listener (public):', err.code, '(portal publik akan pakai default config)'); });
   unsubStudents = onSnapshot(collection(fb.db, "students"), snap => {
     studentsState = []; snap.forEach(d => studentsState.push({ nis: d.id, ...d.data() }));
     try { refreshAllViews(); } catch(e){ console.warn(e); }
@@ -1371,7 +1442,7 @@ function openPublicStudentPortal(){ document.getElementById('landing-view').clas
 function closePublicPortal(){ document.getElementById('public-portal-view').classList.add('hidden'); document.getElementById('landing-view').classList.remove('hidden'); document.getElementById('main-content').style.display = ''; document.getElementById('main-sidebar').style.display = ''; }
 
 async function switchTab(tabId){
-  if (tabId !== 'absensi' && hasUnsavedAbsensi){ const ok = await showConfirm({ title:'Perubahan Belum Disimpan', message:'Lanjutkan?', icon:'fa-triangle-exclamation', confirmText:'Ya' }); if (!ok) return; hasUnsavedAbsensi = false; }
+  if (tabId !== 'absensi' && hasUnsavedAbsensi){ const ok = await showConfirm({ title:'Perubahan Belum Disimpan', message:'Ada perubahan presensi (termasuk hasil scan QR) yang belum disimpan. Lanjutkan tanpa menyimpan?', icon:'fa-triangle-exclamation', confirmText:'Ya, Lanjutkan' }); if (!ok) return; hasUnsavedAbsensi = false; }
   const tabs = ['dashboard','siswa','absensi','statistik','rekap-laporan','settings'];
   const titles = { dashboard:'Dashboard', siswa:'Data Siswa', absensi:'Input Absensi', statistik:'Statistik & Penghargaan', 'rekap-laporan':'Laporan', settings:'Pengaturan' };
   const subs = { dashboard:'Pantau statistik dan aktivitas absensi.', siswa:'Kelola master data siswa.', absensi:'Isi presensi harian siswa.', statistik:'Kelas terbaik per tingkat.', 'rekap-laporan':'Rekap matriks dan cetak laporan.', settings:'Atur branding, kop, piket, poin, teks laporan.' };
@@ -1411,7 +1482,6 @@ function refreshAllViews(){
   try { updateSysDataSummary(); } catch(e){ console.warn(e); }
 }
 
-// ====== SISTEM DATA SUMMARY ======
 function updateSysDataSummary() {
   const el = document.getElementById('sys-data-summary');
   if (!el) return;
@@ -1433,7 +1503,6 @@ function renderInactiveAlert(){
   el.innerHTML = `<div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shrink-0"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="font-extrabold text-amber-900 text-sm">${inactive.length} Data Absensi Tidak Aktif</div><div class="text-xs text-amber-700 mt-0.5">Absensi dari siswa tidak terdaftar</div></div></div><button onclick="showInactiveData()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-list-check"></i> Lihat Detail</button></div>`;
 }
 
-// ====== DASHBOARD ======
 function changeDashCalendarMonth(d){ dashCalMonth += d; if (dashCalMonth<0){dashCalMonth=11;dashCalYear--;} else if (dashCalMonth>11){dashCalMonth=0;dashCalYear++;} renderDashboardCalendar(); }
 function renderDashboardCalendar(){
   const t = document.getElementById('dash-cal-title'); if (!t) return;
@@ -1658,7 +1727,6 @@ async function copyStatistikReport(){
   else showToast('Gagal menyalin. Coba manual copy.', 'error');
 }
 
-// ====== KOP RENDERER UNTUK PRINT ======
 function renderKopHTMLForPrint(cfg) {
   const logoL = cfg.logoLeft ? `<img src="${cfg.logoLeft}" style="max-height:70px;max-width:70px;">` : `<div style="width:60px;height:60px;background:#1e3a8a;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:10px;">LOGO</div>`;
   const logoR = cfg.logoRight ? `<img src="${cfg.logoRight}" style="max-height:70px;max-width:70px;">` : `<div style="width:60px;height:60px;background:#f59e0b;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:bold;font-size:10px;">TUT</div>`;
@@ -1768,7 +1836,6 @@ function renderSiswaSection(){
   if (page.length === 0){ c.innerHTML = `<div class="text-center py-12"><i class="fa-solid fa-inbox text-4xl text-slate-300 mb-3"></i><p class="text-slate-400 text-xs">Tidak ada siswa.</p></div>`; return; }
 
   if (siswaViewMode === 'card') {
-    // CARD MODE
     const photoBlock = (s) => siswaCardShowPhoto ? `<div class="w-24 h-24 rounded-2xl overflow-hidden mb-3 ring-2 ring-slate-100">${avatarHTML(s, 'w-full h-full text-3xl')}</div>` : '';
     c.innerHTML = `<div class="siswa-card-mode">${page.map(s => `
       <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition p-4 flex flex-col items-center text-center">
@@ -1787,18 +1854,13 @@ function renderSiswaSection(){
         </div>
       </div>
     `).join('')}</div>`;
-    // Generate QR codes (sync via qrcode-generator)
     c.querySelectorAll('[data-qr-nis]').forEach(el => {
       const nis = el.getAttribute('data-qr-nis');
       const qrUrl = generateQRDataUrl(nis, 4, 1);
-      if (qrUrl) {
-        el.innerHTML = `<img src="${qrUrl}" alt="QR ${nis}" class="w-28 h-28">`;
-      } else {
-        el.innerHTML = `<div class="w-28 h-28 flex items-center justify-center text-slate-300 text-[9px] text-center px-1">QR tidak tersedia<br>(${nis})</div>`;
-      }
+      if (qrUrl) { el.innerHTML = `<img src="${qrUrl}" alt="QR ${nis}" class="w-28 h-28">`; }
+      else { el.innerHTML = `<div class="w-28 h-28 flex items-center justify-center text-slate-300 text-[9px] text-center px-1">QR tidak tersedia<br>(${nis})</div>`; }
     });
   } else {
-    // TABLE MODE
     c.innerHTML = `<div class="overflow-x-auto rounded-xl border border-slate-200"><table class="w-full text-left text-xs"><thead class="bg-slate-50 text-slate-700 font-bold uppercase text-[10px]"><tr><th class="p-3">Identitas</th><th class="p-3">NIS</th><th class="p-3">Kelas</th><th class="p-3 text-right">Aksi</th></tr></thead><tbody class="divide-y divide-slate-100">${page.map(s=>`<tr class="hover:bg-slate-50/80"><td class="p-3"><div class="flex items-center gap-3">${avatarHTML(s,'w-9 h-9 rounded-full text-sm')}<span class="font-bold text-slate-900">${s.fullName||'-'}</span></div></td><td class="p-3 font-mono font-bold text-slate-700">${s.nis}</td><td class="p-3"><span class="px-2 py-0.5 rounded-md bg-slate-100 font-bold text-slate-700">${s.className||'-'}</span></td><td class="p-3 text-right whitespace-nowrap"><button onclick="openModalEditSiswa('${s.nis}')" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold text-[11px] mr-1 transition"><i class="fa-solid fa-pen"></i> Edit</button><button onclick="deleteSiswa('${s.nis}')" class="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold text-[11px] transition"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')}</tbody></table></div>`;
   }
 }
@@ -1968,7 +2030,7 @@ async function simpanBatchPresensi(){
   });
 }
 
-// ====== QR SCANNER ABSENSI (SESSION-BASED) ======
+// ====== QR SCANNER ABSENSI ======
 async function openAbsensiQrScanner() {
   qrSessionScanned = new Set();
   updateQrSessionCount();
@@ -2164,7 +2226,7 @@ function openStudentDetailDrawer(nis, useFilter){
   currentDrawerNis = nis;
   document.getElementById('drawer-student-name').innerText = s.fullName||'-'; document.getElementById('drawer-student-nis').innerText = s.nis; document.getElementById('drawer-student-class').innerText = s.className||'-';
   const av = document.getElementById('drawer-student-avatar');
-  if (s.photoUrl) av.innerHTML = `<img src="${s.photoUrl}" class="w-full h-full object-cover" onerror="handleAvatarError(this,'fa-graduation-cap','w-full h-full rounded-xl')">`; else { const bg = systemConfig.iconBgStudent || '#2563eb'; const isNone = bg === 'none' || bg === 'transparent'; av.style.background = isNone ? 'transparent' : bg; av.style.color = isNone ? '#1e293b' : getContrastColor(bg); av.innerHTML = renderIconHTML(systemConfig.studentIcon,'fa-graduation-cap'); }
+  if (s.photoUrl) av.innerHTML = `<img src="${s.photoUrl}" class="w-full h-full object-cover" onerror="handleAvatarError(this,'fa-graduation-cap','w-full h-full rounded-xl')">`; else { const bg = systemConfig.iconBgStudent || '#2563eb'; const isNone = bg === 'none' || bg === 'transparent'; const manualColor = systemConfig.iconColorStudent; av.style.background = isNone ? 'transparent' : bg; av.style.color = manualColor || (isNone ? '#1e293b' : getContrastColor(bg)); av.innerHTML = renderIconHTML(systemConfig.studentIcon,'fa-graduation-cap'); }
   const filterStart = useFilter ? selectedRekapStartDate : null; const filterEnd = useFilter ? selectedRekapEndDate : null;
   document.getElementById('drawer-period-text').innerText = `Periode: ${filterStart ? (filterEnd ? `${filterStart} - ${filterEnd}` : filterStart) : 'Semua Data'}`;
   const pts = calcStudentPoints(nis, filterStart, filterEnd);
@@ -2204,8 +2266,11 @@ function renderLapCalendar(){
     const ds = `${pad(d)}/${pad(lapCalMonth+1)}/${lapCalYear}`;
     const active = selectedLapDate === ds; const hasData = activeDates.has(ds);
     const btn = document.createElement('div');
-    btn.className = `calendar-day-cell ${active ? 'calendar-day-active' : 'hover:bg-blue-100 text-slate-800'} ${hasData && !active ? 'font-bold text-blue-700' : ''}`;
-    btn.innerText = d; if (hasData) btn.title = 'Ada data';
+    // FIX: Highlight tanggal yang memiliki data dengan background berwarna
+    if (active) btn.className = 'calendar-day-cell calendar-day-active';
+    else if (hasData) btn.className = 'calendar-day-cell calendar-day-hasdata hover:bg-blue-200';
+    else btn.className = 'calendar-day-cell hover:bg-blue-100 text-slate-800';
+    btn.innerText = d; if (hasData) btn.title = 'Ada data absensi';
     btn.onclick = () => { selectedLapDate = ds; renderLapCalendar(); updateLapDataBadge(); generateLaporanText(); renderSignerPreview(); };
     g.appendChild(btn);
   }
@@ -2443,6 +2508,8 @@ function renderCekMonthGrid(){
 function selectCekMonth(idx){ const d = new Date(cekPickerYear, idx, 1); cekCustomStart = fmtDate(firstOfMonth(d)); cekCustomEnd = fmtDate(lastOfMonth(d)); document.getElementById('cek-custom-label').innerText = `${monthNames()[idx]} ${cekPickerYear}`; document.getElementById('btn-cek-all').className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-300'; document.getElementById('btn-cek-custom').className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1'; closeCekCustom(); if (!document.getElementById('result-cek-siswa').classList.contains('hidden')) performCekAbsensiSiswa(); }
 function selectCekSemester(){ const now = new Date(); const m = now.getMonth(); let start, end, label; if (m >= 6){ start = new Date(now.getFullYear(), 6, 1); end = new Date(now.getFullYear(), 11, 31); label = `Ganjil ${now.getFullYear()}`; } else { start = new Date(now.getFullYear(), 0, 1); end = new Date(now.getFullYear(), 5, 30); label = `Genap ${now.getFullYear()}`; } cekCustomStart = fmtDate(start); cekCustomEnd = fmtDate(end); document.getElementById('cek-custom-label').innerText = `Semester ${label}`; document.getElementById('btn-cek-all').className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-300'; document.getElementById('btn-cek-custom').className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1'; closeCekCustom(); if (!document.getElementById('result-cek-siswa').classList.contains('hidden')) performCekAbsensiSiswa(); }
 function selectCekSemesterKemarin(){ const now = new Date(); const m = now.getMonth(); let start, end, label; if (m >= 6){ start = new Date(now.getFullYear(), 0, 1); end = new Date(now.getFullYear(), 5, 30); label = `Genap ${now.getFullYear()}`; } else { start = new Date(now.getFullYear() - 1, 6, 1); end = new Date(now.getFullYear() - 1, 11, 31); label = `Ganjil ${now.getFullYear() - 1}`; } cekCustomStart = fmtDate(start); cekCustomEnd = fmtDate(end); document.getElementById('cek-custom-label').innerText = `Semester ${label}`; document.getElementById('btn-cek-all').className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-300'; document.getElementById('btn-cek-custom').className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white flex items-center gap-1'; closeCekCustom(); if (!document.getElementById('result-cek-siswa').classList.contains('hidden')) performCekAbsensiSiswa(); }
+
+// Perform + render 4 kartu dinamis (layout baru) + Riwayat grouped by month
 function performCekAbsensiSiswa(){
   const nis = document.getElementById('input-search-nis').value.trim();
   const box = document.getElementById('result-cek-siswa');
@@ -2457,20 +2524,65 @@ function performCekAbsensiSiswa(){
   document.getElementById('res-siswa-nis').innerText = nis;
   const ph = document.getElementById('res-siswa-photo');
   if (student && student.photoUrl) ph.innerHTML = `<img src="${student.photoUrl}" class="w-full h-full object-cover" onerror="handleAvatarError(this,'fa-graduation-cap','w-full h-full text-2xl')">`;
-  else { const bg = systemConfig.iconBgStudent || '#2563eb'; const isNone = bg === 'none' || bg === 'transparent'; ph.style.background = isNone ? 'transparent' : bg; ph.style.color = isNone ? '#1e293b' : getContrastColor(bg); ph.innerHTML = renderIconHTML(systemConfig.studentIcon,'fa-graduation-cap'); }
+  else { const bg = systemConfig.iconBgStudent || '#2563eb'; const isNone = bg === 'none' || bg === 'transparent'; const manualColor = systemConfig.iconColorStudent; ph.style.background = isNone ? 'transparent' : bg; ph.style.color = manualColor || (isNone ? '#1e293b' : getContrastColor(bg)); ph.innerHTML = renderIconHTML(systemConfig.studentIcon,'fa-graduation-cap'); }
+
   const pts = calcStudentPoints(nis, filterStart, filterEnd);
-  document.getElementById('res-count-hadir').innerText = pts.hadir; document.getElementById('res-count-sakit').innerText = pts.sakit; document.getElementById('res-count-izin').innerText = pts.izin; document.getElementById('res-count-alpha').innerText = pts.alpha;
-  document.getElementById('res-persentase').innerText = `${pts.days > 0 ? Math.round(pts.hadir/pts.days*100) : 0}%`;
+
+  // 4 kartu dinamis dengan format: LABEL / count / X% | Y poin
+  const base = systemConfig.pointBase ?? 3;
+  const pS = systemConfig.pointSakit ?? 0;
+  const pI = systemConfig.pointIzin ?? 0;
+  const pA = systemConfig.pointAlpha ?? 0;
+
+  const totalDays = pts.days || 0;
+  const pctH = totalDays > 0 ? Math.round(pts.hadir / totalDays * 100) : 0;
+  const pctS = totalDays > 0 ? Math.round(pts.sakit / totalDays * 100) : 0;
+  const pctI = totalDays > 0 ? Math.round(pts.izin / totalDays * 100) : 0;
+  const pctA = totalDays > 0 ? Math.round(pts.alpha / totalDays * 100) : 0;
+
+  const pointH = pts.hadir * base;
+  const pointS = pts.sakit * pS;
+  const pointI = pts.izin * pI;
+  const pointA = pts.alpha * pA;
+
+  document.getElementById('res-count-hadir').innerText = pts.hadir;
+  document.getElementById('res-count-sakit').innerText = pts.sakit;
+  document.getElementById('res-count-izin').innerText = pts.izin;
+  document.getElementById('res-count-alpha').innerText = pts.alpha;
+
+  document.getElementById('res-detail-hadir').innerText = `${pctH}% • ${pointH >= 0 ? '+' : ''}${pointH} poin`;
+  document.getElementById('res-detail-sakit').innerText = `${pctS}% • ${pointS >= 0 ? '+' : ''}${pointS} poin`;
+  document.getElementById('res-detail-izin').innerText = `${pctI}% • ${pointI >= 0 ? '+' : ''}${pointI} poin`;
+  document.getElementById('res-detail-alpha').innerText = `${pctA}% • ${pointA >= 0 ? '+' : ''}${pointA} poin`;
+
+  document.getElementById('res-persentase').innerText = `${totalDays > 0 ? Math.round(pts.hadir / totalDays * 100) : 0}%`;
   document.getElementById('res-pct-detail').innerText = `${pts.hadir} dari ${pts.days} hari`;
   document.getElementById('res-poin-siswa').innerText = pts.actual;
   document.getElementById('res-poin-detail').innerText = `Maksimal: ${pts.max}`;
+
+  // Riwayat dikelompokkan per bulan
   const tb = document.getElementById('res-table-history'); tb.innerHTML = '';
-  if (history.length === 0){ tb.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Tidak ada data.</td></tr>`; }
-  else { history.sort((a,b)=>(parseDateStr(b.date)||0)-(parseDateStr(a.date)||0)); const bg = {Hadir:'bg-emerald-100 text-emerald-700',Sakit:'bg-amber-100 text-amber-700',Izin:'bg-sky-100 text-sky-700',Alpha:'bg-rose-100 text-rose-700'}; history.forEach((x,i) => { tb.innerHTML += `<tr><td class="p-3 text-center text-slate-500 font-bold">${i+1}</td><td class="p-3 text-center font-mono font-bold text-slate-700">${x.date}</td><td class="p-3 text-center"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${bg[x.attendance]}">${x.attendance}</span></td></tr>`; }); }
+  if (history.length === 0){
+    tb.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400 text-xs">Tidak ada data.</td></tr>`;
+  } else {
+    const grp = {};
+    history.forEach(x => { const p = x.date.split('/'); const k = `${p[2]}-${p[1]}`; if (!grp[k]) grp[k] = { month: parseInt(p[1]), year: p[2], items: [] }; grp[k].items.push(x); });
+    const keys = Object.keys(grp).sort().reverse();
+    const bg = {Hadir:'bg-emerald-100 text-emerald-700',Sakit:'bg-amber-100 text-amber-700',Izin:'bg-sky-100 text-sky-700',Alpha:'bg-rose-100 text-rose-700'};
+    keys.forEach(k => {
+      const g = grp[k];
+      tb.innerHTML += `<tr class="bg-blue-50"><td colspan="3" class="text-center font-extrabold text-xs py-2 text-blue-800">${monthNames()[g.month-1]} ${g.year}</td></tr>`;
+      g.items.sort((a,b) => (parseDateStr(b.date)||0) - (parseDateStr(a.date)||0));
+      g.items.forEach((x, i) => {
+        tb.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-3 text-center text-slate-500 font-bold">${i+1}</td><td class="p-3 text-center font-mono font-bold text-slate-700">${x.date}</td><td class="p-3 text-center"><span class="px-2 py-0.5 rounded font-bold text-[10px] ${bg[x.attendance]}">${x.attendance}</span></td></tr>`;
+      });
+    });
+  }
   box.classList.remove('hidden');
   const portal = document.getElementById('public-portal-view');
   if (portal) portal.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 function openCekInfo(){
   if (!currentCekNis) return;
   const student = studentsState.find(s => s.nis === currentCekNis);
@@ -2533,11 +2645,155 @@ function downloadStudentReportXLSX(){
   showToast("XLSX diunduh.", "success");
 }
 
+// ====== QR PRINT MODAL (BARU) ======
+function openQrPrintModal(){
+  if (!currentCekNis) { showToast('Cari siswa terlebih dahulu.', 'warning'); return; }
+  document.getElementById('modal-qr-print').classList.remove('hidden'); document.getElementById('modal-qr-print').classList.add('flex');
+}
+function closeQrPrintModal(){
+  document.getElementById('modal-qr-print').classList.add('hidden'); document.getElementById('modal-qr-print').classList.remove('flex');
+}
+async function printCurrentStudentCard(withPhoto){
+  closeQrPrintModal();
+  if (!currentCekNis) return;
+  const s = studentsState.find(x => x.nis === currentCekNis);
+  if (!s) { showToast('Data siswa tidak ditemukan.', 'error'); return; }
+  showLoading('Membuat kartu...', '1 kartu');
+  try {
+    const qrUrl = generateQRDataUrl(s.nis, 5, 1);
+    const photoHtml = withPhoto
+      ? (s.photoUrl ? `<img src="${s.photoUrl}" class="photo" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\'photo placeholder\\'><i class=\\'fa-solid fa-graduation-cap\\'></i></div>')">` : `<div class="photo placeholder"><i class="fa-solid fa-graduation-cap"></i></div>`)
+      : '';
+    const qrHtml = qrUrl ? `<img src="${qrUrl}" class="qr">` : `<div class="qr placeholder"><i class="fa-solid fa-qrcode"></i></div>`;
+    const card = `
+      <div class="card">
+        ${photoHtml}
+        <div class="name">${s.fullName || '-'}</div>
+        ${qrHtml}
+        <div class="meta">
+          <span><i class="fa-solid fa-door-open"></i> ${s.className||'-'}</span>
+          <span><i class="fa-solid fa-id-badge"></i> ${s.nis}</span>
+        </div>
+      </div>`;
+    hideLoading();
+    const w = window.open('', '_blank');
+    const html = `<!DOCTYPE html><html><head>
+      <title>Kartu Siswa - ${s.fullName}</title>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 portrait; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; padding: 3mm; margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+        .card { border: 2px solid #1e3a8a; border-radius: 4mm; padding: 3mm 2mm; text-align: center; break-inside: avoid; page-break-inside: avoid; background: #fff; display: flex; flex-direction: column; align-items: center; }
+        .photo { width: 24mm; height: 24mm; border-radius: 3mm; object-fit: cover; margin-bottom: 1.5mm; border: 2px solid #f59e0b; background: #f1f5f9; }
+        .photo.placeholder { display: flex; align-items: center; justify-content: center; font-size: 10mm; color: #94a3b8; }
+        .name { font-weight: 800; font-size: 10pt; color: #0f172a; margin-bottom: 1.5mm; line-height: 1.2; word-break: break-word; }
+        .qr { width: 28mm; height: 28mm; }
+        .qr.placeholder { display: flex; align-items: center; justify-content: center; font-size: 15mm; color: #94a3b8; }
+        .meta { display: flex; justify-content: center; gap: 3mm; font-size: 9pt; font-weight: 700; color: #475569; margin-top: 1.5mm; }
+        .meta span { display: flex; align-items: center; gap: 1mm; }
+        @media print { .grid { grid-template-columns: repeat(3, 1fr); } .card { box-shadow: none; } }
+      </style>
+      </head><body>
+      <div class="grid">${card}</div>
+      <script>window.onload=function(){ setTimeout(function(){window.print();}, 400); };<\/script>
+      </body></html>`;
+    w.document.write(html); w.document.close();
+    showToast('Kartu siap cetak.', 'success');
+  } catch(e) { hideLoading(); showToast('Gagal print: ' + e.message, 'error'); }
+}
+
 // ====== SETTINGS ======
 function updateIconPreview(inputId, previewId){ const val = document.getElementById(inputId)?.value || ''; const el = document.getElementById(previewId); if (!el) return; if (!val){ el.innerHTML = '<i class="fa-solid fa-question text-slate-300"></i>'; return; } el.innerHTML = renderIconHTML(val,'fa-question'); }
-function openIconPicker(inputId, category){ iconPickerTargetInput = inputId; iconPickerCategory = category || 'app'; const list = document.getElementById('preset-icon-list'); const icons = PRESET_ICONS[iconPickerCategory] || PRESET_ICONS.app; list.innerHTML = ''; icons.forEach(ic => { const b = document.createElement('button'); b.type = 'button'; b.className = 'preset-icon-btn'; b.innerHTML = `<i class="fa-solid ${ic}"></i>`; b.title = ic; b.onclick = () => { document.getElementById('icon-picker-input').value = ic; }; list.appendChild(b); }); document.getElementById('icon-picker-input').value = document.getElementById(inputId)?.value || ''; document.getElementById('modal-icon-picker').classList.remove('hidden'); document.getElementById('modal-icon-picker').classList.add('flex'); }
+
+// Icon picker dengan color picker
+function openIconPicker(inputId, category){
+  iconPickerTargetInput = inputId;
+  iconPickerCategory = category || 'app';
+  const list = document.getElementById('preset-icon-list');
+  const icons = PRESET_ICONS[iconPickerCategory] || PRESET_ICONS.app;
+  list.innerHTML = '';
+  icons.forEach(ic => { const b = document.createElement('button'); b.type = 'button'; b.className = 'preset-icon-btn'; b.innerHTML = `<i class="fa-solid ${ic}"></i>`; b.title = ic; b.onclick = () => { document.getElementById('icon-picker-input').value = ic; updateIconPickerPreview(); }; list.appendChild(b); });
+  const currentIcon = document.getElementById(inputId)?.value || '';
+  document.getElementById('icon-picker-input').value = currentIcon;
+  // Load current color
+  const colorKey = 'iconColor' + iconPickerCategory.charAt(0).toUpperCase() + iconPickerCategory.slice(1);
+  const bgKey = 'iconBg' + iconPickerCategory.charAt(0).toUpperCase() + iconPickerCategory.slice(1);
+  const currentColor = systemConfig[colorKey];
+  if (currentColor) {
+    document.getElementById('icon-picker-color').value = currentColor;
+    document.getElementById('icon-picker-color-auto').checked = false;
+    document.getElementById('icon-picker-color').disabled = false;
+    document.getElementById('icon-picker-color').classList.remove('opacity-50');
+    iconPickerAutoColor = false;
+  } else {
+    const bg = systemConfig[bgKey];
+    document.getElementById('icon-picker-color').value = getContrastColor(bg || '#f59e0b');
+    document.getElementById('icon-picker-color-auto').checked = true;
+    document.getElementById('icon-picker-color').disabled = true;
+    document.getElementById('icon-picker-color').classList.add('opacity-50');
+    iconPickerAutoColor = true;
+  }
+  updateIconPickerPreview();
+  document.getElementById('modal-icon-picker').classList.remove('hidden'); document.getElementById('modal-icon-picker').classList.add('flex');
+}
 function closeIconPicker(){ document.getElementById('modal-icon-picker').classList.add('hidden'); document.getElementById('modal-icon-picker').classList.remove('flex'); }
-function applyIconPicker(){ const val = document.getElementById('icon-picker-input').value.trim(); if (!val){ showToast("Pilih/isi ikon.", "warning"); return; } if (iconPickerTargetInput){ const el = document.getElementById(iconPickerTargetInput); if (el){ el.value = val; const map = { 'set-app-icon': 'preview-app-icon', 'set-user-icon': 'preview-user-icon', 'set-student-icon': 'preview-student-icon' }; updateIconPreview(iconPickerTargetInput, map[iconPickerTargetInput] || ''); } } closeIconPicker(); }
+function updateIconPickerPreview() {
+  const input = document.getElementById('icon-picker-input').value.trim();
+  const color = document.getElementById('icon-picker-color').value;
+  const preview = document.getElementById('preview-color-icon');
+  if (!preview) return;
+  if (input.startsWith('http')) {
+    preview.innerHTML = `<img src="${input}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">`;
+  } else {
+    preview.innerHTML = `<i class="fa-solid ${input || 'fa-palette'}" style="color:${color};"></i>`;
+  }
+}
+function toggleIconColorAuto() {
+  const auto = document.getElementById('icon-picker-color-auto').checked;
+  const colorInput = document.getElementById('icon-picker-color');
+  if (auto) {
+    const bgKey = 'iconBg' + iconPickerCategory.charAt(0).toUpperCase() + iconPickerCategory.slice(1);
+    const bg = systemConfig[bgKey];
+    colorInput.value = getContrastColor(bg || '#f59e0b');
+    colorInput.disabled = true;
+    colorInput.classList.add('opacity-50');
+  } else {
+    colorInput.disabled = false;
+    colorInput.classList.remove('opacity-50');
+  }
+  iconPickerAutoColor = auto;
+  updateIconPickerPreview();
+}
+function applyIconPicker(){
+  const val = document.getElementById('icon-picker-input').value.trim();
+  if (!val){ showToast("Pilih/isi ikon.", "warning"); return; }
+  if (iconPickerTargetInput){
+    const el = document.getElementById(iconPickerTargetInput);
+    if (el){
+      el.value = val;
+      const map = { 'set-app-icon': 'preview-app-icon', 'set-user-icon': 'preview-user-icon', 'set-student-icon': 'preview-student-icon' };
+      updateIconPreview(iconPickerTargetInput, map[iconPickerTargetInput] || '');
+    }
+  }
+  // Save color
+  const colorKey = 'iconColor' + iconPickerCategory.charAt(0).toUpperCase() + iconPickerCategory.slice(1);
+  if (iconPickerAutoColor) {
+    delete systemConfig[colorKey];
+  } else {
+    systemConfig[colorKey] = document.getElementById('icon-picker-color').value;
+  }
+  // Sync ke input color di settings
+  const syncInput = document.getElementById('set-iconcolor-' + iconPickerCategory);
+  if (syncInput) {
+    const autoContrast = getContrastColor(systemConfig['iconBg' + iconPickerCategory.charAt(0).toUpperCase() + iconPickerCategory.slice(1)] || '#f59e0b');
+    syncInput.value = systemConfig[colorKey] || autoContrast;
+  }
+  applySettingsUI();
+  closeIconPicker();
+}
 
 function toggleIconBgTransparent(which){
   const cb = document.getElementById(`set-iconbg-${which}-transparent`);
@@ -2577,13 +2833,16 @@ function loadSettingsToUI(){
   set('set-title-p1', systemConfig.titleP1); set('set-color-p1', systemConfig.colorP1); set('set-title-p2', systemConfig.titleP2); set('set-color-p2', systemConfig.colorP2); set('set-subtitle', systemConfig.subtitle);
   set('set-app-icon', systemConfig.appIcon); set('set-user-icon', systemConfig.userIcon); set('set-student-icon', systemConfig.studentIcon);
   ['app','user','student'].forEach(which => {
-    const key = `iconBg${which.charAt(0).toUpperCase() + which.slice(1)}`;
-    const val = systemConfig[key] || '#f59e0b';
-    const isTransparent = val === 'none' || val === 'transparent';
+    const bgKey = `iconBg${which.charAt(0).toUpperCase() + which.slice(1)}`;
+    const colorKey = `iconColor${which.charAt(0).toUpperCase() + which.slice(1)}`;
+    const bgVal = systemConfig[bgKey] || '#f59e0b';
+    const isTransparent = bgVal === 'none' || bgVal === 'transparent';
     const ci = document.getElementById(`set-iconbg-${which}`);
     const cb = document.getElementById(`set-iconbg-${which}-transparent`);
-    if (ci){ ci.value = isTransparent ? '#f59e0b' : val; ci.disabled = isTransparent; ci.classList.toggle('opacity-50', isTransparent); }
+    if (ci){ ci.value = isTransparent ? '#f59e0b' : bgVal; ci.disabled = isTransparent; ci.classList.toggle('opacity-50', isTransparent); }
     if (cb) cb.checked = isTransparent;
+    const colorInput = document.getElementById(`set-iconcolor-${which}`);
+    if (colorInput) colorInput.value = systemConfig[colorKey] || getContrastColor(isTransparent ? '#ffffff' : bgVal);
   });
   renderKopRowsUI();
   for (let i = 1; i <= 6; i++) {
@@ -2615,8 +2874,11 @@ function applyIconBg(elementId, bgKey){
   const el = document.getElementById(elementId);
   if (!el) return;
   const bg = systemConfig[bgKey];
-  if (!bg || bg === 'none' || bg === 'transparent'){ el.style.backgroundColor = 'transparent'; el.style.color = '#1e293b'; }
-  else { el.style.backgroundColor = bg; el.style.color = getContrastColor(bg); }
+  // Ambil warna ikon kustom (jika ada)
+  const colorKey = 'iconColor' + bgKey.replace('iconBg','');
+  const manualColor = systemConfig[colorKey];
+  if (!bg || bg === 'none' || bg === 'transparent'){ el.style.backgroundColor = 'transparent'; el.style.color = manualColor || '#1e293b'; }
+  else { el.style.backgroundColor = bg; el.style.color = manualColor || getContrastColor(bg); }
 }
 function applySettingsUI(){
   const s1 = document.getElementById('sidebar-title-p1'), s2 = document.getElementById('sidebar-title-p2');
@@ -2638,9 +2900,12 @@ document.getElementById('form-settings').addEventListener('submit', async e => {
   systemConfig.titleP1 = g('set-title-p1'); systemConfig.colorP1 = document.getElementById('set-color-p1').value; systemConfig.titleP2 = g('set-title-p2'); systemConfig.colorP2 = document.getElementById('set-color-p2').value;
   systemConfig.subtitle = g('set-subtitle'); systemConfig.appIcon = g('set-app-icon'); systemConfig.userIcon = g('set-user-icon'); systemConfig.studentIcon = g('set-student-icon');
   ['app','user','student'].forEach(which => {
-    const key = `iconBg${which.charAt(0).toUpperCase() + which.slice(1)}`;
+    const bgKey = `iconBg${which.charAt(0).toUpperCase() + which.slice(1)}`;
+    const colorKey = `iconColor${which.charAt(0).toUpperCase() + which.slice(1)}`;
     const isTransparent = document.getElementById(`set-iconbg-${which}-transparent`).checked;
-    systemConfig[key] = isTransparent ? 'none' : document.getElementById(`set-iconbg-${which}`).value;
+    systemConfig[bgKey] = isTransparent ? 'none' : document.getElementById(`set-iconbg-${which}`).value;
+    const colorInput = document.getElementById(`set-iconcolor-${which}`);
+    if (colorInput) systemConfig[colorKey] = colorInput.value;
   });
   for (let i = 1; i <= 6; i++) {
     systemConfig[`kopLine${i}`] = document.getElementById(`set-kop-line${i}`)?.value || '';
@@ -2791,6 +3056,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch (err) { console.error('[Edudigi] Boot:', err); showToast(`Boot: ${err.message}`, "error"); }
 });
 
+// Warn user sebelum close tab jika ada perubahan belum disimpan
+window.addEventListener('beforeunload', (e) => {
+  if (hasUnsavedAbsensi) {
+    e.preventDefault();
+    e.returnValue = 'Ada perubahan presensi (termasuk hasil scan QR) yang belum disimpan. Yakin keluar?';
+    return e.returnValue;
+  }
+});
+
 Object.entries({
   togglePasswordVisibility, openPublicStudentPortal, closePublicPortal, refreshData, toggleSidebar, toggleMobileSidebar, switchTab, switchSubTabRekap, switchSettingsSubTab,
   renderDashboardStats, changeDashCalendarMonth, renderStatistikPage, changeStatMonth, openStatistikInfo, closeStatistikInfo, openStatistikShare, closeStatistikShare, copyStatistikReport, printStatistikReport, runSimulasi, showSimHelp,
@@ -2804,7 +3078,8 @@ Object.entries({
   generateLaporanText, copyLaporanText, cetakLaporanResmi, resetLapDate, onSignatureModeChange, renderSignerPreview, exportToExcel, changeLapCalendarMonth, onLapRangeToggle, onLapRangeChange, applyLapStudentFilter, updateLapDataBadge,
   navLapRangeCalendar, handleLapRangeDayClick,
   setCekSiswaDatePreset, performCekAbsensiSiswa, downloadStudentReportXLSX, openCekCustom, closeCekCustom, changeCekPickerYear, selectCekMonth, selectCekSemester, selectCekSemesterKemarin, openCekInfo, closeCekInfo,
-  handleLogout, updateIconPreview, openIconPicker, closeIconPicker, applyIconPicker, toggleIconBgTransparent,
+  openQrPrintModal, closeQrPrintModal, printCurrentStudentCard,
+  handleLogout, updateIconPreview, openIconPicker, closeIconPicker, applyIconPicker, toggleIconBgTransparent, updateIconPickerPreview, toggleIconColorAuto,
   toggleKopStyle, copyTextBySelector,
   addGuruPiketRow, removeGuruPiketRow, updatePiketField, renderGuruPiketRows, importBulkPiket,
   closeProcessInfo, closeProcessResult,
